@@ -33,11 +33,34 @@ pipeline {
                     )
                 ]) {
                     bat """
+                        echo Current Jenkins Windows user:
+                        whoami
+
+                        echo.
                         echo Testing SSH connection from Jenkins to Linux VM...
                         echo Target host: ${params.TARGET_HOST}
                         echo SSH user: %SSH_USER%
+                        echo SSH key file: %SSH_KEY_FILE%
 
-                        ssh -i "%SSH_KEY_FILE%" -o StrictHostKeyChecking=no -o UserKnownHostsFile=NUL %SSH_USER%@${params.TARGET_HOST} "hostname && whoami && sudo -n whoami"
+                        echo.
+                        echo Fixing SSH private key permissions for Windows OpenSSH...
+
+                        for /f "delims=" %%U in ('whoami') do set "CURRENT_USER=%%U"
+
+                        icacls "%SSH_KEY_FILE%"
+                        icacls "%SSH_KEY_FILE%" /inheritance:r
+                        icacls "%SSH_KEY_FILE%" /grant:r "%CURRENT_USER%:R"
+                        icacls "%SSH_KEY_FILE%"
+
+                        echo.
+                        echo Running SSH test...
+
+                        ssh -i "%SSH_KEY_FILE%" ^
+                            -o StrictHostKeyChecking=no ^
+                            -o UserKnownHostsFile=NUL ^
+                            -o IdentitiesOnly=yes ^
+                            -o BatchMode=yes ^
+                            %SSH_USER%@${params.TARGET_HOST} "hostname && whoami && sudo -n whoami"
                     """
                 }
             }
@@ -50,7 +73,7 @@ pipeline {
         }
 
         failure {
-            echo 'SSH connection test failed. Check Jenkins credentials, VM IP, SSH service, or sudo permissions.'
+            echo 'SSH connection test failed. Check Jenkins credentials, VM IP, SSH service, sudo permissions, or Windows key file permissions.'
         }
 
         always {
