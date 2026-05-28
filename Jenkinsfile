@@ -17,6 +17,12 @@ pipeline {
             }
         }
 
+        stage('Show target host') {
+            steps {
+                echo "Target host is: ${params.TARGET_HOST}"
+            }
+        }
+
         stage('Test SSH connection from Jenkins') {
             steps {
                 withCredentials([
@@ -26,10 +32,13 @@ pipeline {
                         usernameVariable: 'SSH_USER'
                     )
                 ]) {
-                    bat '''
+                    bat """
                         echo Testing SSH connection from Jenkins to Linux VM...
-                        ssh -i "%SSH_KEY_FILE%" -o StrictHostKeyChecking=no -o UserKnownHostsFile=NUL %SSH_USER%@%TARGET_HOST% "hostname && whoami && sudo -n whoami"
-                    '''
+                        echo Target host: ${params.TARGET_HOST}
+                        echo SSH user: %SSH_USER%
+
+                        ssh -i "%SSH_KEY_FILE%" -o StrictHostKeyChecking=no -o UserKnownHostsFile=NUL %SSH_USER%@${params.TARGET_HOST} "hostname && whoami && sudo -n whoami"
+                    """
                 }
             }
         }
