@@ -285,25 +285,6 @@ Expected page content:
 Deployed by Jenkins Pipeline
 Apache/httpd installation completed successfully.
 ```
-
----
-
-## 📸 Screenshots for Submission
-
-Recommended screenshots:
-
-```text
-1. GitHub repository with Jenkinsfile.
-2. Jenkins job configured as Pipeline from SCM.
-3. Jenkins credentials page with SSH credential ID.
-4. Successful Jenkins pipeline stages.
-5. Console output with OS detection.
-6. Console output with Apache2 installation.
-7. Console output with HTTP/1.1 200 OK.
-8. Console output with log check result.
-9. Browser page opened at http://192.168.56.102.
-```
-
 ---
 
 ## 🧠 Problems Solved During Implementation
@@ -384,7 +365,4 @@ This project demonstrates a Jenkins deployment pipeline that connects to a remot
 
 The final build status was:
 
-```text
 SUCCESS
-```
-```

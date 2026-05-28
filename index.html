@@ -1,0 +1,910 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Jenkins Apache Logs Pipeline Summary</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --card: #111827;
+            --text: #e5e7eb;
+            --muted: #9ca3af;
+            --accent: #38bdf8;
+            --accent-soft: rgba(56, 189, 248, 0.14);
+            --green: #22c55e;
+            --green-soft: rgba(34, 197, 94, 0.14);
+            --yellow: #facc15;
+            --yellow-soft: rgba(250, 204, 21, 0.12);
+            --red: #fb7185;
+            --red-soft: rgba(251, 113, 133, 0.12);
+            --border: rgba(255, 255, 255, 0.12);
+            --code: #020617;
+            --shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            margin: 0;
+            font-family: "Segoe UI", Arial, sans-serif;
+            background:
+                radial-gradient(circle at top left, rgba(56, 189, 248, 0.18), transparent 35%),
+                radial-gradient(circle at top right, rgba(34, 197, 94, 0.12), transparent 30%),
+                radial-gradient(circle at bottom right, rgba(167, 139, 250, 0.12), transparent 30%),
+                var(--bg);
+            color: var(--text);
+            line-height: 1.65;
+        }
+
+        .container {
+            width: min(1180px, 92%);
+            margin: 0 auto;
+            padding: 40px 0 80px;
+        }
+
+        .hero {
+            padding: 46px;
+            border: 1px solid var(--border);
+            background: linear-gradient(135deg, rgba(17, 24, 39, 0.96), rgba(31, 41, 55, 0.92));
+            border-radius: 28px;
+            box-shadow: var(--shadow);
+            margin-bottom: 28px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::after {
+            content: "";
+            position: absolute;
+            right: -110px;
+            top: -110px;
+            width: 300px;
+            height: 300px;
+            border-radius: 999px;
+            background: rgba(56, 189, 248, 0.12);
+        }
+
+        .hero h1 {
+            font-size: clamp(2rem, 5vw, 4rem);
+            line-height: 1.05;
+            margin: 0 0 18px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero p {
+            max-width: 900px;
+            color: var(--muted);
+            font-size: 1.08rem;
+            margin: 0 0 24px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .badges,
+        .nav {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .badges {
+            position: relative;
+            z-index: 1;
+        }
+
+        .nav {
+            margin: 0 0 26px;
+        }
+
+        .badge,
+        .nav a {
+            border: 1px solid var(--border);
+            background: rgba(255, 255, 255, 0.06);
+            color: var(--text);
+            border-radius: 999px;
+            font-weight: 600;
+            font-size: 0.92rem;
+        }
+
+        .badge {
+            padding: 8px 12px;
+        }
+
+        .nav a {
+            padding: 9px 13px;
+            text-decoration: none;
+        }
+
+        .nav a:hover {
+            background: var(--accent-soft);
+            border-color: rgba(56, 189, 248, 0.45);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(12, minmax(0, 1fr));
+            gap: 18px;
+            margin-top: 18px;
+        }
+
+        .card {
+            background: rgba(17, 24, 39, 0.94);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 24px;
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.22);
+            min-width: 0;
+            overflow: hidden;
+        }
+
+        .span-4 {
+            grid-column: span 4;
+        }
+
+        .span-5 {
+            grid-column: span 5;
+        }
+
+        .span-6 {
+            grid-column: span 6;
+        }
+
+        .span-7 {
+            grid-column: span 7;
+        }
+
+        .span-8 {
+            grid-column: span 8;
+        }
+
+        .span-12 {
+            grid-column: span 12;
+        }
+
+        h2 {
+            margin: 0 0 16px;
+            font-size: 1.55rem;
+            color: #f9fafb;
+            line-height: 1.25;
+        }
+
+        h3 {
+            margin: 20px 0 8px;
+            color: #f9fafb;
+            line-height: 1.25;
+        }
+
+        p {
+            color: var(--muted);
+            margin: 10px 0;
+        }
+
+        ul,
+        ol {
+            padding-left: 22px;
+            margin: 12px 0;
+        }
+
+        li {
+            margin: 7px 0;
+            color: var(--text);
+        }
+
+        code,
+        pre {
+            font-family: Consolas, "Courier New", monospace;
+        }
+
+        code {
+            background: rgba(255, 255, 255, 0.08);
+            padding: 2px 6px;
+            border-radius: 7px;
+            color: #e0f2fe;
+        }
+
+        pre {
+            background: var(--code);
+            color: #d1d5db;
+            border: 1px solid var(--border);
+            padding: 16px;
+            border-radius: 16px;
+            overflow-x: auto;
+            font-size: 0.9rem;
+            line-height: 1.55;
+            margin: 12px 0;
+            white-space: pre;
+            max-width: 100%;
+        }
+
+        .diagram {
+            background: var(--code);
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            padding: 20px;
+            overflow-x: auto;
+            color: #d1d5db;
+        }
+
+        .info,
+        .success,
+        .warning,
+        .problem {
+            padding: 18px;
+            border-radius: 18px;
+            margin: 14px 0;
+            border: 1px solid;
+        }
+
+        .info {
+            background: var(--accent-soft);
+            border-color: rgba(56, 189, 248, 0.45);
+            color: #bae6fd;
+        }
+
+        .success {
+            background: var(--green-soft);
+            border-color: rgba(34, 197, 94, 0.5);
+            color: #bbf7d0;
+        }
+
+        .warning {
+            background: var(--yellow-soft);
+            border-color: rgba(250, 204, 21, 0.5);
+            color: #fef9c3;
+        }
+
+        .problem {
+            background: var(--red-soft);
+            border-color: rgba(251, 113, 133, 0.5);
+            color: #fecdd3;
+        }
+
+        .info strong,
+        .success strong,
+        .warning strong,
+        .problem strong {
+            display: block;
+            margin-bottom: 6px;
+            color: #fff;
+        }
+
+        .step {
+            display: flex;
+            gap: 14px;
+            align-items: flex-start;
+            padding: 14px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .step:last-child {
+            border-bottom: none;
+        }
+
+        .num {
+            flex: 0 0 34px;
+            height: 34px;
+            display: grid;
+            place-items: center;
+            border-radius: 50%;
+            background: rgba(56, 189, 248, 0.18);
+            color: var(--accent);
+            font-weight: 700;
+            border: 1px solid rgba(56, 189, 248, 0.45);
+        }
+
+        .table-wrap {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            overflow: hidden;
+            border-radius: 16px;
+        }
+
+        th,
+        td {
+            padding: 12px 14px;
+            border-bottom: 1px solid var(--border);
+            text-align: left;
+            vertical-align: top;
+        }
+
+        th {
+            color: #f9fafb;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        td {
+            color: var(--muted);
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        .result-list {
+            display: grid;
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        .result-item {
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
+            border: 1px solid var(--border);
+            background: rgba(255, 255, 255, 0.04);
+            padding: 12px;
+            border-radius: 14px;
+        }
+
+        .check {
+            color: var(--green);
+            font-weight: 900;
+        }
+
+        /* Main Issues section: this uses flex, not markdown/grid auto placement.
+       The first three cards are forced into one row on desktop. */
+        .issues-section {
+            margin-top: 18px;
+        }
+
+        .issues-header {
+            margin-bottom: 18px;
+        }
+
+        .issues-row {
+            display: flex;
+            flex-direction: row;
+            flex-wrap: nowrap;
+            gap: 18px;
+            align-items: stretch;
+            width: 100%;
+            margin-bottom: 18px;
+        }
+
+        .issue-card {
+            flex: 1 1 0;
+            min-width: 0;
+            width: 33.333%;
+        }
+
+        .issue-card pre,
+        .issue-wide pre {
+            max-width: 100%;
+            overflow-x: auto;
+            white-space: pre;
+        }
+
+        .issue-wide {
+            width: 100%;
+        }
+
+        .footer {
+            margin-top: 28px;
+            text-align: center;
+            color: var(--muted);
+            font-size: 0.95rem;
+        }
+
+        @media (max-width: 980px) {
+            .issues-row {
+                flex-direction: column;
+            }
+
+            .issue-card {
+                width: 100%;
+            }
+        }
+
+        @media (max-width: 860px) {
+
+            .span-4,
+            .span-5,
+            .span-6,
+            .span-7,
+            .span-8,
+            .span-12 {
+                grid-column: span 12;
+            }
+
+            .hero {
+                padding: 28px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <main class="container">
+        <section class="hero">
+            <h1>🚀 Jenkins Apache Logs Pipeline</h1>
+            <p>
+                Detailed HTML summary of the SoftServe DevOps Jenkins task. The pipeline is stored in GitHub,
+                executed by Jenkins from SCM, connects to a remote Ubuntu VM through SSH, installs Apache2,
+                verifies the web server, and checks Apache access logs for 4xx and 5xx errors.
+            </p>
+            <div class="badges">
+                <span class="badge">✅ Jenkins Pipeline</span>
+                <span class="badge">🔗 GitHub SCM</span>
+                <span class="badge">🔐 SSH Credentials</span>
+                <span class="badge">🐧 Ubuntu VM</span>
+                <span class="badge">🌐 Apache2</span>
+                <span class="badge">📄 Log Analysis</span>
+                <span class="badge">🏁 SUCCESS</span>
+            </div>
+        </section>
+
+        <nav class="nav">
+            <a href="#goal">Task Goal</a>
+            <a href="#architecture">Architecture</a>
+            <a href="#environment">Environment</a>
+            <a href="#workflow">Pipeline Stages</a>
+            <a href="#jenkinsfile">Jenkinsfile</a>
+            <a href="#issues">Issues Solved</a>
+            <a href="#result">Result</a>
+            <a href="#summary">Summary</a>
+        </nav>
+
+        <section id="goal" class="grid">
+            <div class="card span-8">
+                <h2>📌 Task Goal</h2>
+                <p>
+                    The goal was to create a Jenkins Pipeline that installs Apache2/httpd on a remote Linux VM,
+                    verifies the operating system, starts the web server, checks HTTP availability, and reads web
+                    server logs to detect 4xx and 5xx HTTP errors.
+                </p>
+                <div class="info">
+                    <strong>Main requirement</strong>
+                    The deployment pipeline had to be saved as a <code>Jenkinsfile</code>, uploaded to GitHub,
+                    and executed in Jenkins by retrieving the pipeline from the repository.
+                </div>
+            </div>
+            <div class="card span-4">
+                <h2>🏁 Final Status</h2>
+                <div class="success"><strong>Build result</strong>Finished: SUCCESS</div>
+                <pre>HTTP/1.1 200 OK
+No 4xx or 5xx errors found
+Apache2 installed and running</pre>
+            </div>
+        </section>
+
+        <section id="architecture" class="grid">
+            <div class="card span-12">
+                <h2>🧱 Architecture</h2>
+                <p>
+                    Jenkins runs locally on Windows and connects to a remote Ubuntu VM through SSH. The VM is used
+                    as the deployment target where Apache2 is installed and verified.
+                </p>
+                <div class="diagram">
+                    <pre>GitHub Repository
+      │
+      │ Jenkinsfile
+      ▼
+Jenkins Pipeline from SCM
+      │
+      │ SSH key authentication
+      ▼
+Remote Ubuntu VM
+      │
+      ├── Detect operating system
+      ├── Install Apache2/httpd
+      ├── Enable and start service
+      ├── Create test web page
+      ├── Verify HTTP response
+      └── Check access logs for 4xx/5xx</pre>
+                </div>
+            </div>
+        </section>
+
+        <section id="environment" class="grid">
+            <div class="card span-6">
+                <h2>🖥️ Environment</h2>
+                <div class="table-wrap">
+                    <table>
+                        <tr>
+                            <th>Component</th>
+                            <th>Value</th>
+                        </tr>
+                        <tr>
+                            <td>Jenkins controller</td>
+                            <td>Windows local machine</td>
+                        </tr>
+                        <tr>
+                            <td>Jenkins workspace</td>
+                            <td><code>C:\ProgramData\Jenkins\.jenkins\workspace\jenkins-apache-logs</code></td>
+                        </tr>
+                        <tr>
+                            <td>Target VM</td>
+                            <td>Ubuntu Linux VM</td>
+                        </tr>
+                        <tr>
+                            <td>Target OS</td>
+                            <td>Ubuntu 26.04 LTS</td>
+                        </tr>
+                        <tr>
+                            <td>Target IP</td>
+                            <td><code>192.168.56.102</code></td>
+                        </tr>
+                        <tr>
+                            <td>SSH user</td>
+                            <td><code>nick</code></td>
+                        </tr>
+                        <tr>
+                            <td>Web server</td>
+                            <td>Apache2</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+            <div class="card span-6">
+                <h2>🔗 Repository & Credentials</h2>
+                <p>Jenkins retrieves the pipeline from the GitHub repository using Pipeline from SCM.</p>
+                <pre>https://github.com/unikol/jenkins-apache-logs</pre>
+                <h3>Jenkins credential</h3>
+                <pre>Credential ID: jenkins-apache-ssh-key
+Type: SSH Username with private key
+Username: nick</pre>
+                <div class="warning">
+                    <strong>Security note</strong>
+                    The SSH private key is stored only inside Jenkins Global Credentials. It is not stored in the GitHub
+                    repository.
+                </div>
+            </div>
+        </section>
+
+        <section id="workflow" class="grid">
+            <div class="card span-12">
+                <h2>⚙️ Pipeline Stages</h2>
+                <div class="step">
+                    <div class="num">1</div>
+                    <div><strong>Checkout</strong>
+                        <p>Jenkins retrieves the repository from GitHub and reads the Jenkinsfile.</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="num">2</div>
+                    <div><strong>Prepare deployment scripts</strong>
+                        <p>The pipeline creates helper shell scripts: <code>deploy_apache.sh</code> and
+                            <code>check_logs.sh</code>.</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="num">3</div>
+                    <div><strong>Test SSH connection</strong>
+                        <p>Jenkins connects to the remote Ubuntu VM and verifies that it can run <code>sudo</code>
+                            without a password.</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="num">4</div>
+                    <div><strong>Install and start Apache/httpd</strong>
+                        <p>The pipeline detects the package manager, installs Apache2 on Ubuntu, enables the service,
+                            restarts it, and creates a test page.</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="num">5</div>
+                    <div><strong>Check web server logs</strong>
+                        <p>The pipeline reads the Apache access log and searches for HTTP status codes from the 4xx and
+                            5xx ranges.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="grid">
+            <div class="card span-6">
+                <h2>🌐 Apache Verification</h2>
+                <p>The pipeline verified the web server with:</p>
+                <pre>curl -I http://localhost</pre>
+                <p>Successful response:</p>
+                <pre>HTTP/1.1 200 OK
+Server: Apache/2.4.66 (Ubuntu)</pre>
+                <p>The deployed test page was created at:</p>
+                <pre>/var/www/html/index.html</pre>
+            </div>
+            <div class="card span-6">
+                <h2>📄 Log Verification</h2>
+                <p>The pipeline found and checked the Apache access log:</p>
+                <pre>/var/log/apache2/access.log</pre>
+                <p>It searched for 4xx and 5xx HTTP status codes using <code>awk</code>.</p>
+                <pre>awk '$9 ~ /^[45][0-9][0-9]$/ {print}'</pre>
+                <div class="success"><strong>Log check result</strong>No 4xx or 5xx errors found in the access log.
+                </div>
+            </div>
+        </section>
+
+        <section id="jenkinsfile" class="grid">
+            <div class="card span-12">
+                <h2>📜 Final Jenkinsfile</h2>
+                <p>
+                    This Jenkinsfile contains the complete pipeline logic: checkout, SSH test, Apache deployment,
+                    HTTP verification, and access log analysis.
+                </p>
+                <pre><code>pipeline {
+    agent any
+
+    parameters {
+        string(name: 'TARGET_HOST', defaultValue: '192.168.56.102', description: 'Target Linux VM IP address')
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+                echo 'Repository was checked out successfully.'
+            }
+        }
+
+        stage('Prepare deployment scripts') {
+            steps {
+                writeFile file: 'deploy_apache.sh', text: '''#!/usr/bin/env bash
+set -euo pipefail
+
+cat /etc/os-release
+
+if command -v apt-get &gt;/dev/null 2&gt;&amp;1; then
+    WEB_SERVICE="apache2"
+    sudo apt-get update -y
+    sudo DEBIAN_FRONTEND=noninteractive apt-get install -y apache2
+elif command -v dnf &gt;/dev/null 2&gt;&amp;1; then
+    WEB_SERVICE="httpd"
+    sudo dnf install -y httpd
+elif command -v yum &gt;/dev/null 2&gt;&amp;1; then
+    WEB_SERVICE="httpd"
+    sudo yum install -y httpd
+else
+    echo "Unsupported Linux distribution."
+    exit 1
+fi
+
+sudo systemctl enable "$WEB_SERVICE"
+sudo systemctl restart "$WEB_SERVICE"
+echo "&lt;h1&gt;Deployed by Jenkins Pipeline&lt;/h1&gt;&lt;p&gt;Apache/httpd installation completed successfully.&lt;/p&gt;" | sudo tee /var/www/html/index.html &gt;/dev/null
+sudo systemctl status "$WEB_SERVICE" --no-pager
+curl -I http://localhost
+'''
+
+                writeFile file: 'check_logs.sh', text: '''#!/usr/bin/env bash
+set -euo pipefail
+
+if [ -f /var/log/apache2/access.log ]; then
+    LOG_FILE="/var/log/apache2/access.log"
+elif [ -f /var/log/httpd/access_log ]; then
+    LOG_FILE="/var/log/httpd/access_log"
+else
+    echo "No Apache/httpd access log file found."
+    exit 2
+fi
+
+sudo tail -20 "$LOG_FILE"
+ERROR_LINES=$(sudo awk '$9 ~ /^[45][0-9][0-9]$/ {print}' "$LOG_FILE" || true)
+
+if [ -n "$ERROR_LINES" ]; then
+    echo "$ERROR_LINES"
+    exit 1
+else
+    echo "No 4xx or 5xx errors found in the access log."
+    exit 0
+fi
+'''
+            }
+        }
+
+        stage('Test SSH connection') {
+            steps {
+                withCredentials([sshUserPrivateKey(credentialsId: 'jenkins-apache-ssh-key', keyFileVariable: 'SSH_KEY_FILE', usernameVariable: 'SSH_USER')]) {
+                    bat """
+                        for /f "delims=" %%U in ('whoami') do set "CURRENT_USER=%%U"
+                        icacls "%SSH_KEY_FILE%" /inheritance:r
+                        icacls "%SSH_KEY_FILE%" /grant:r "%CURRENT_USER%:R"
+                        ssh -i "%SSH_KEY_FILE%" -o StrictHostKeyChecking=no -o UserKnownHostsFile=NUL -o IdentitiesOnly=yes -o BatchMode=yes %SSH_USER%@${params.TARGET_HOST} "hostname &amp;&amp; whoami &amp;&amp; sudo -n whoami"
+                    """
+                }
+            }
+        }
+
+        stage('Install and start Apache/httpd') {
+            steps {
+                withCredentials([sshUserPrivateKey(credentialsId: 'jenkins-apache-ssh-key', keyFileVariable: 'SSH_KEY_FILE', usernameVariable: 'SSH_USER')]) {
+                    bat """
+                        for /f "delims=" %%U in ('whoami') do set "CURRENT_USER=%%U"
+                        icacls "%SSH_KEY_FILE%" /inheritance:r
+                        icacls "%SSH_KEY_FILE%" /grant:r "%CURRENT_USER%:R"
+                        scp -i "%SSH_KEY_FILE%" -o StrictHostKeyChecking=no -o UserKnownHostsFile=NUL -o IdentitiesOnly=yes -o BatchMode=yes deploy_apache.sh %SSH_USER%@${params.TARGET_HOST}:/tmp/jenkins_deploy_apache.sh
+                        ssh -i "%SSH_KEY_FILE%" -o StrictHostKeyChecking=no -o UserKnownHostsFile=NUL -o IdentitiesOnly=yes -o BatchMode=yes %SSH_USER%@${params.TARGET_HOST} "tr -d '\\r' &lt; /tmp/jenkins_deploy_apache.sh &gt; /tmp/jenkins_deploy_apache_fixed.sh &amp;&amp; sudo bash /tmp/jenkins_deploy_apache_fixed.sh"
+                    """
+                }
+            }
+        }
+
+        stage('Check web server logs for 4xx and 5xx') {
+            steps {
+                script {
+                    def logCheckStatus = 0
+                    withCredentials([sshUserPrivateKey(credentialsId: 'jenkins-apache-ssh-key', keyFileVariable: 'SSH_KEY_FILE', usernameVariable: 'SSH_USER')]) {
+                        logCheckStatus = bat(script: """
+                            for /f "delims=" %%U in ('whoami') do set "CURRENT_USER=%%U"
+                            icacls "%SSH_KEY_FILE%" /inheritance:r
+                            icacls "%SSH_KEY_FILE%" /grant:r "%CURRENT_USER%:R"
+                            scp -i "%SSH_KEY_FILE%" -o StrictHostKeyChecking=no -o UserKnownHostsFile=NUL -o IdentitiesOnly=yes -o BatchMode=yes check_logs.sh %SSH_USER%@${params.TARGET_HOST}:/tmp/jenkins_check_logs.sh
+                            ssh -i "%SSH_KEY_FILE%" -o StrictHostKeyChecking=no -o UserKnownHostsFile=NUL -o IdentitiesOnly=yes -o BatchMode=yes %SSH_USER%@${params.TARGET_HOST} "tr -d '\\r' &lt; /tmp/jenkins_check_logs.sh &gt; /tmp/jenkins_check_logs_fixed.sh &amp;&amp; sudo bash /tmp/jenkins_check_logs_fixed.sh"
+                        """, returnStatus: true)
+                    }
+
+                    if (logCheckStatus == 1) {
+                        currentBuild.result = 'UNSTABLE'
+                    } else if (logCheckStatus != 0) {
+                        error "Unexpected error during log verification. Exit code: ${logCheckStatus}"
+                    } else {
+                        echo 'Log verification completed successfully. No 4xx/5xx errors found.'
+                    }
+                }
+            }
+        }
+    }
+}</code></pre>
+            </div>
+        </section>
+
+        <section id="issues" class="issues-section">
+            <div class="card issues-header">
+                <h2>🧠 Main Issues Solved</h2>
+                <p>
+                    During this task, several real Jenkins and SSH-related problems appeared. Each issue was analyzed,
+                    fixed, and documented as part of the final solution.
+                </p>
+            </div>
+
+            <div class="issues-row">
+                <article class="card issue-card">
+                    <h2>1. Empty TARGET_HOST</h2>
+                    <div class="problem">
+                        <strong>Problem</strong>
+                        Jenkins tried to connect to <code>nick@</code> without the VM IP address.
+                    </div>
+                    <pre>nick@ "hostname &amp;&amp; whoami &amp;&amp; sudo -n whoami"</pre>
+                    <div class="success">
+                        <strong>Fix</strong>
+                        The Jenkinsfile was changed to use <code>${params.TARGET_HOST}</code> directly.
+                    </div>
+                </article>
+
+                <article class="card issue-card">
+                    <h2>2. Windows SSH key permissions</h2>
+                    <div class="problem">
+                        <strong>Problem</strong>
+                        Windows OpenSSH rejected the Jenkins temporary private key because file permissions were too
+                        open.
+                    </div>
+                    <pre>WARNING: UNPROTECTED PRIVATE KEY FILE!</pre>
+                    <div class="success">
+                        <strong>Fix</strong>
+                        The pipeline updates private key permissions with <code>icacls</code>.
+                    </div>
+                    <pre>icacls "%SSH_KEY_FILE%" /inheritance:r
+icacls "%SSH_KEY_FILE%" /grant:r "%CURRENT_USER%:R"</pre>
+                </article>
+
+                <article class="card issue-card">
+                    <h2>3. Invalid SSH key format</h2>
+                    <div class="problem">
+                        <strong>Problem</strong>
+                        Jenkins reported that the SSH key had an invalid format.
+                    </div>
+                    <pre>Load key "ssh-key-SSH_KEY_FILE": invalid format</pre>
+                    <div class="success">
+                        <strong>Fix</strong>
+                        The correct OpenSSH private key was added to Jenkins Credentials.
+                    </div>
+                    <pre>BEGIN OPENSSH PRIVATE KEY
+Private key content
+END OPENSSH PRIVATE KEY</pre>
+                </article>
+            </div>
+
+            <div class="card issue-wide">
+                <h2>4. Groovy dollar escaping issue</h2>
+                <div class="problem">
+                    <strong>Problem</strong>
+                    Jenkinsfile parsing failed because Groovy interpreted the <code>$</code> symbol inside a shell
+                    command.
+                </div>
+                <pre>illegal string body character after dollar sign</pre>
+                <div class="success">
+                    <strong>Fix</strong>
+                    Instead of using <code>sed -i 's/\r$//'</code>, the pipeline used <code>tr -d '\r'</code>
+                    to remove Windows CRLF characters before executing scripts on Linux.
+                </div>
+                <pre>tr -d '\r' &lt; /tmp/jenkins_deploy_apache.sh &gt; /tmp/jenkins_deploy_apache_fixed.sh</pre>
+            </div>
+        </section>
+
+        <section id="result" class="grid">
+            <div class="card span-7">
+                <h2>✅ What Happened After Running Jenkins</h2>
+                <div class="result-list">
+                    <div class="result-item"><span class="check">✔</span><span>Jenkins pulled the latest Jenkinsfile
+                            from GitHub.</span></div>
+                    <div class="result-item"><span class="check">✔</span><span>Jenkins connected to the Ubuntu VM
+                            through SSH.</span></div>
+                    <div class="result-item"><span class="check">✔</span><span>The pipeline detected Ubuntu 26.04
+                            LTS.</span></div>
+                    <div class="result-item"><span class="check">✔</span><span>Apache2 and required dependencies were
+                            installed.</span></div>
+                    <div class="result-item"><span class="check">✔</span><span>Apache2 service was enabled and
+                            started.</span></div>
+                    <div class="result-item"><span class="check">✔</span><span>The test web page was created in
+                            <code>/var/www/html/index.html</code>.</span></div>
+                    <div class="result-item"><span class="check">✔</span><span><code>curl -I http://localhost</code>
+                            returned <code>HTTP/1.1 200 OK</code>.</span></div>
+                    <div class="result-item"><span class="check">✔</span><span>The Apache access log was checked for 4xx
+                            and 5xx errors.</span></div>
+                    <div class="result-item"><span class="check">✔</span><span>No <code>4xx</code> or <code>5xx</code>
+                            errors were found.</span></div>
+                </div>
+            </div>
+            <div class="card span-5">
+                <h2>🏁 Final Console Result</h2>
+                <pre>HTTP/1.1 200 OK
+Server: Apache/2.4.66 (Ubuntu)
+
+Using log file:
+/var/log/apache2/access.log
+
+No 4xx or 5xx errors found in the access log.
+
+Deployment completed successfully.
+Finished: SUCCESS</pre>
+                <div class="success"><strong>Conclusion</strong>The Jenkins pipeline completed the deployment and
+                    verification process successfully.</div>
+            </div>
+        </section>
+
+        <section id="summary" class="grid">
+            <div class="card span-12">
+                <h2>📌 Summary</h2>
+                <p>
+                    This task demonstrated a complete Jenkins Pipeline from SCM. The Jenkinsfile was stored in GitHub
+                    and executed by Jenkins on a Windows controller. The pipeline connected to a remote Ubuntu VM
+                    through SSH,
+                    installed Apache2, started the service, created a test web page, verified the HTTP response, and
+                    checked
+                    the Apache access log for 4xx and 5xx errors.
+                </p>
+                <p>
+                    The most important practical part of this task was not only writing the Jenkinsfile, but also
+                    debugging
+                    real CI/CD problems: passing parameters correctly, configuring Jenkins SSH credentials, fixing
+                    Windows
+                    OpenSSH key permissions, correcting the private key format, and solving Groovy escaping issues in
+                    the Jenkinsfile.
+                </p>
+                <div class="success">
+                    <strong>Final result</strong>
+                    The pipeline finished successfully. Apache2 was installed and running, the HTTP check returned
+                    <code>200 OK</code>, and no <code>4xx</code> or <code>5xx</code> errors were found in the access
+                    log.
+                </div>
+            </div>
+        </section>
+
+        <p class="footer">
+            Jenkins Apache Logs Pipeline · SoftServe DevOps Task · GitHub Pages Summary · Created by Mykola Stepanov
+        </p>
+    </main>
+</body>
+
+</html>
