@@ -170,7 +170,7 @@ fi
                             -o UserKnownHostsFile=NUL ^
                             -o IdentitiesOnly=yes ^
                             -o BatchMode=yes ^
-                            %SSH_USER%@${params.TARGET_HOST} "sed -i 's/\\r$//' /tmp/jenkins_deploy_apache.sh && sudo bash /tmp/jenkins_deploy_apache.sh"
+                            %SSH_USER%@${params.TARGET_HOST} "tr -d '\\r' < /tmp/jenkins_deploy_apache.sh > /tmp/jenkins_deploy_apache_fixed.sh && sudo bash /tmp/jenkins_deploy_apache_fixed.sh"
                     """
                 }
             }
@@ -213,7 +213,7 @@ fi
                                     -o UserKnownHostsFile=NUL ^
                                     -o IdentitiesOnly=yes ^
                                     -o BatchMode=yes ^
-                                    %SSH_USER%@${params.TARGET_HOST} "sed -i 's/\\r$//' /tmp/jenkins_check_logs.sh && sudo bash /tmp/jenkins_check_logs.sh"
+                                    %SSH_USER%@${params.TARGET_HOST} "tr -d '\\r' < /tmp/jenkins_check_logs.sh > /tmp/jenkins_check_logs_fixed.sh && sudo bash /tmp/jenkins_check_logs_fixed.sh"
                             """,
                             returnStatus: true
                         )
